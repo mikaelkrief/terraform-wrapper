@@ -95,7 +95,7 @@ outputToAzDo:
 | azure_credentials | keys of Azure SP credentials | subscriptionId, clientId, tenantId, accessKey  |
 | varfiles | Array of env-vars files to add in options -var-file |  |
 | vars | List to vars to ovverides the var-file  | name: name of the variable ; value: value of the variable |
-| OutputToAzDo | List of Terraform output to transform to Azure Pipelines variables | key: the terraform output name , value:the Azdo variables to generate |
+| outputToAzDo | List of Terraform output to transform to Azure Pipelines variables | key: the terraform output name , value:the Azdo variables to generate |
 
 ## The terraform wrapper execution
 
