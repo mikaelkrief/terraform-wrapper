@@ -1,4 +1,4 @@
-# The Terraform Wrapper
+# Terraform Wrapper
 
 For help the usage of Terraform command and workflow for provision infrastructure on Azure, I created this Wrapper Terraform that englobe all Terraform lifecycle operations.
 This wrapper can also create variables in Azure Pipelines based on terraform outputs.
