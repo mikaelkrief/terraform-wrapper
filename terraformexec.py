@@ -214,7 +214,7 @@ if __name__ == "__main__":
     else:
         variables = None
     outplan = data["planout"]
-    outputAzdo = data["OutputToAzDo"]
+    outputAzdo = data["outputToAzDo"]
     terraformoutput = data["run_output"]
 
     terraformpath = os.getcwd()

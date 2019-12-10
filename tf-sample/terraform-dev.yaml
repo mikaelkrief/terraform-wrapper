@@ -16,6 +16,6 @@ varfiles:
 vars:
 - name: createdby
   value: __createdby__
-OutputToAzDo:
+outputToAzDo:
   webapp_name: webappname
   instrumentation_key: ApplicationInsights.InstrumentationKey

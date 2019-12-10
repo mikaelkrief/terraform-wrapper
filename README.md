@@ -50,7 +50,7 @@ The syntax of the Json configuration is:
             "value": "__release__"
         }
     ],
-    "OutputToAzDo": {
+    "outputToAzDo": {
         "webapp_name": "webappname",
         "instrumentation_key": "ApplicationInsights.InstrumentationKey"
     }
@@ -78,7 +78,7 @@ varfiles:
 vars:
 - name: createdby
   value: __createdby__
-OutputToAzDo:
+outputToAzDo:
   webapp_name: webappname
   instrumentation_key: ApplicationInsights.InstrumentationKey
 ```
