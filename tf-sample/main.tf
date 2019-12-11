@@ -55,5 +55,6 @@ resource "azurerm_application_insights" "appinsight-app" {
   tags = {
     ENV       = var.environement
     CreatedBy = var.createdby
+    Test      = "ok2"
   }
 }

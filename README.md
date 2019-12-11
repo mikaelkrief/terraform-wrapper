@@ -8,6 +8,7 @@ This wrapper can also create variables in Azure Pipelines based on terraform out
 - Download the terraform cli [download page](https://www.terraform.io/downloads.html)
 - This wrapper is developper in Python, so for use it you need to install Python on your machine https://www.python.org/downloads/ + pip
 - Install python dependecies packages (referenced in requirements.txt) by run the commande ```pip install -r requirements.txt```
+- Install jq [download](https://stedolan.github.io/jq/)
 - Use Service principal with secret in Azure
 
 ## The configuration file

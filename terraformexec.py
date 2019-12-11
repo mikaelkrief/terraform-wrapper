@@ -4,7 +4,8 @@ import argparse
 import json
 import yaml  # require pip install pyyaml
 import sys
-import logging
+import coloredlogs,logging
+from coloredlogs import ColoredFormatter
 import subprocess
 import shutil
 import subprocess
@@ -42,39 +43,46 @@ class Terraform(object):
         os.environ["ARM_ACCESS_KEY"] = az_access_key
 
     def Init(self):
-        self.logger.info("=> Run Terrform init")
-        self.logger.info("[terraform init -no-color -backend-config={} -reconfigure]".format(self.backendFile))
-        self.RunCommand("terraform init -no-color -backend-config={} -reconfigure".format(self.backendFile))
+        self.logger.info("\n=> Run Terrform init")
+        #self.logger.info ("{0:{1}^30}".format("Run Terrform init","="))
+        terraformcmd = "terraform init -no-color -backend-config={} -reconfigure".format(self.backendFile)
+        if self.verbose:
+            self.logger.info("[{}]".format(terraformcmd))
+        self.RunCommand(terraformcmd)
 
     def Format(self):
-        self.logger.info("=> Run Terraform fmt")
-        self.logger.info("[terraform fmt -no-color]")
-        self.RunCommand("terraform fmt -no-color")
+        self.logger.info("\n=> Run Terraform fmt")
+        terraformcmd ="terraform fmt -no-color"
+        if self.verbose:
+            self.logger.info("[{}]".format(terraformcmd))
+        self.RunCommand(terraformcmd)
 
 
     def Validate(self):
-        self.logger.info("=> Run Terraform validate")
-        self.logger.info("[terraform validate -no-color]")
-        return self.RunCommand("terraform validate -no-color")
+        self.logger.info("\n=> Run Terraform validate")
+        terraformcmd ="terraform validate -no-color"
+        if self.verbose:
+            self.logger.info("[{}]".format(terraformcmd))
+        return self.RunCommand(terraformcmd)
         
 
     def Plan(self):
-        self.logger.info("=> Run Terrform plan")
+        self.logger.info("\n=> Run Terrform plan")
         cmd = ""
 
         for file in self.varFiles:
             cmd += " -var-file="+file
         for var in self.variables:
             cmd += """ -var "{}={}" """.format(var["name"], var["value"])
-
         cmd += " -out "+self.planout
 
-        self.logger.info(
-            "[terraform plan -detailed-exitcode -no-color {}]".format(cmd))
-        return self.RunCommand("terraform plan -detailed-exitcode -no-color {}".format(cmd))
+        terraformcmd = "terraform plan -detailed-exitcode -no-color {}".format(cmd)
+        if self.verbose:
+            self.logger.info("[{}]".format(terraformcmd))
+        return self.RunCommand(terraformcmd)
 
     def Apply(self):
-        self.logger.info("=> Run Terraform Apply")
+        self.logger.info("\n=> Run Terraform Apply")
         cmd = ""
 
         if self.applyAutoApprove:
@@ -85,12 +93,16 @@ class Terraform(object):
                 cmd += " -var-file="+file
             for var in self.variables:
                 cmd += """ -var "{}={}" """.format(var["name"], var["value"])
+        
+        terraformcmd = "terraform apply -no-color {}".format(cmd)
 
-        self.logger.info("[terraform apply -no-color "+cmd+"]")
-        return self.RunCommand("terraform apply -no-color {}".format(cmd))
+        if self.verbose:
+            self.logger.info("[{}]".format(terraformcmd))
+        
+        return self.RunCommand(terraformcmd)
 
     def Destroy(self):
-        self.logger.info("=> Run Terrform destroy")
+        self.logger.info("\n=> Run Terrform destroy")
         cmd = ""
 
         for file in self.varFiles:
@@ -100,14 +112,20 @@ class Terraform(object):
 
         cmd += " -auto-approve"
 
-        self.logger.info("[terraform destroy -no-color "+cmd+" "+self.terraform_path+"]")
-        self.RunCommand("terraform destroy -no-color {}".format(cmd))
+        terraformcmd = "terraform destroy -no-color {}".format(cmd)
+
+        self.logger.info("[{}]".format(terraformcmd))
+        self.RunCommand(terraformcmd)
 
     def Output(self):
-        self.logger.info("=> Run terraform output in "+os.getcwd())
-        self.logger.info("[terraform output -json]")
-        outputjson = os.popen("terraform output -json").read()
-        self.logger.info(outputjson)
+        self.logger.info("\n=> Run terraform output in "+os.getcwd())
+        
+        terraformcmd = "terraform output -json"
+        if self.verbose:
+            self.logger.info("[{}]".format(terraformcmd))
+        outputjson = os.popen(terraformcmd).read()
+        if self.verbose:
+            self.logger.info(outputjson)
 
         # change the JSON string into a JSON object
         jsonObject = json.loads(outputjson)
@@ -119,22 +137,22 @@ class Terraform(object):
         return jsonObject
 
     def CheckIfDestroy(self):
-        self.logger.info("=> Check if Terraform Destroy")
-        plan = os.popen("terraform show -json "+self.planout +
-                        " | jq .resource_changes[].change.actions[]").read()
+        self.logger.info("\n=> Check in the terraform plan out if Terraform will destroy resources")
+        plan = os.popen("terraform show -json "+self.planout +" | jq .resource_changes[].change.actions[]").read()
 
         finddelete = plan.find("delete")
         if finddelete > 0:
-            self.logger.info("DESTROY : Terraform can't be done")
+            self.logger.info("DESTROY in the plan : Terraform can't be done, use --acceptDestroy option for force the destroy")
             return True
         else:
-            self.logger.info("Great there is no destroy")
+            self.logger.info("Great there is no destroy in the plan !!")
             return False
 
-    def Clean(self):
-        if os.path.exists(self.planout):
-            self.logger.info("Delete the "+self.planout+" file")
-            os.remove(self.planout)
+    def Clean(self,deleteTheOutPlan=True):
+        if deleteTheOutPlan == True :
+            if os.path.exists(self.planout):
+                self.logger.info("Delete the "+self.planout+" file")
+                os.remove(self.planout)
         if os.path.exists(".terraform"):
             self.logger.info("Delete the .terraform folder")
             shutil.rmtree(".terraform")
@@ -149,13 +167,29 @@ class Terraform(object):
         return p.returncode
 
 
+
+
+def RunApply(t):
+    """
+    Run the Apply command
+    """
+    apply_ret_code = t.Apply()
+    logger.info("Apply return code: {}".format(apply_ret_code))
+    if(apply_ret_code in [1]):
+        sys.exit("Error in Terraform apply")
+
+
 if __name__ == "__main__":
+
 
     logger = logging.getLogger()
     handler = logging.StreamHandler()
     logger.addHandler(handler)
     logger.setLevel(logging.DEBUG)
-    logger.info("====> Start Terraform execution")
+    coloredlogs.install(fmt='%(message)s', level='DEBUG', logger=logger)
+
+    
+    logger.info ("{0:{1}^40}".format("Start Terraform execution","="))
 
     parser = argparse.ArgumentParser()
 
@@ -247,7 +281,7 @@ if __name__ == "__main__":
     if(args.accessKey != None):
         azAccessKey = args.accessKey
 
-    acceptDestroy = args.acceptdestroy
+    userAcceptDestroy = args.acceptdestroy
 
     # Affichage des arguments et de la config si -v
     if args.verbose:
@@ -262,7 +296,7 @@ if __name__ == "__main__":
         logger.info("terraformpath: "+str(terraformpath))
         logger.info("terraformoutput: "+str(terraformoutput))
         logger.info("applyterraform: "+str(applyterraform))
-        logger.info("acceptDestroy: "+str(acceptDestroy))
+        logger.info("acceptDestroy: "+str(userAcceptDestroy))
         logger.info("verbose: "+str(args.verbose))
         logger.info("azSubscriptionId: "+str(azSubscriptionId))
         logger.info("azClientId: "+str(azClientId))
@@ -272,7 +306,7 @@ if __name__ == "__main__":
     # Appel du constructeur
     t = Terraform(azSubscriptionId, azClientId, args.clientSecret, azTenantId, azAccessKey, terraformpath,
                   backendfile, varfiles, logger, applyAutoApprove=autoapprove, variables=variables, planout=outplan,
-                  outputazdo=outputAzdo, use_apply=applyterraform, run_output=terraformoutput, terraformversion="0.12.0", useazcli=useazcli)
+                  outputazdo=outputAzdo, use_apply=applyterraform, run_output=terraformoutput, verbose=args.verbose, useazcli=useazcli)
 
 
     currentfolder = os.getcwd()
@@ -307,34 +341,23 @@ if __name__ == "__main__":
             else:
                 if(plan_ret_code in [2]):  # plan need changes
                     if (t.use_apply == True):
-                        terraformdestroy = False  # Does changes need deletes, default false
-                        if(acceptDestroy == False):
-                            terraformdestroy = t.CheckIfDestroy()  # check dans le plan
+                        terraformdestroy = False  # Does changes need delete resources
 
-                            if(terraformdestroy == False):
-                                # Terraform Apply
-
-                                apply_ret_code = t.Apply()
-                                logger.info(
-                                    "Apply return code: {}".format(apply_ret_code))
-                                if(apply_ret_code in [1, 256]):
-                                    sys.exit("Error in Terraform apply")
-
-                            else:
-                                sys.exit(
-                                    "Error Terraform will be destroy resources")
-
-                        if(acceptDestroy == True):
+                        if(userAcceptDestroy == True):
                             # Terraform Apply with acceptDestroy
-                            apply_ret_code = t.Apply()
-                            logger.info(
-                                "Apply return code: {}".format(apply_ret_code))
-                            if(apply_ret_code in [1]):
-                                sys.exit("Error in Terraform apply")
+                            RunApply(t)
+
+                        if(userAcceptDestroy == False):
+                            #terraformdestroy = t.CheckIfDestroy()  # check in the terraform plan
+
+                            if(t.CheckIfDestroy() == False):
+                                # Terraform Apply
+                                RunApply(t)
+                            else:
+                                sys.exit("Error Terraform will be destroy resources")
                     else:
                         logger.info("=> Terraform apply is skipped")
 
-            ret = ""
             if(plan_ret_code in [0, 2]):  # no changes or changes
                 # Terraform Output tf => Azure DevOps variables
                 if(t.run_output == True):
@@ -346,4 +369,5 @@ if __name__ == "__main__":
             # clean folder
             t.Clean()
 
-    logger.info("====> End Terraform execution")
+    logger.info ("{0:{1}^40}".format("End Terraform execution","="))
+
