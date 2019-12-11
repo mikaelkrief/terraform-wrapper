@@ -30,8 +30,7 @@ The syntax of the Json configuration is:
     "azure_credentials":{
         "subscriptionId":"44bc8ffe-XXXXXXXXXX",
         "clientId":"3a93648a-XXXXXXXXXXXXXXXX",
-        "tenantId":"c625fb12-XXXXXXXXXXXXXXXXXXXXXXXXXXX",
-        "accessKey":"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+        "tenantId":"c625fb12-XXXXXXXXXXXXXXXXXXXXXXXXXXX
     },
     "varfiles": [
         "IC/env-vars.tfvars"
